@@ -4,6 +4,7 @@
   "description": "first electron application bookmarker",
   "main": "./app/main.js",
   "scripts": {
+    "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
