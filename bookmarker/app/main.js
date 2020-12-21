@@ -6,6 +6,13 @@ const { app, BrowserWindow } = require('electron');
 let mainWindow = null;
 app.on('ready', () => {
    console.log('hello electron');
-   mainWindow = new BrowserWindow();
-   mainWindow.webContents.loadFile(`${__dirname}/index.html`).then(r => {console.log('html loaded:', r)}).catch(r => {console.log('get error', r)});
+   mainWindow = new BrowserWindow({
+      webPreferences: {
+         // electron 版本 5 以后默认为 false，改为true 可以使用 nodejs 函数
+         nodeIntegration: true,
+      }
+   });
+   // debugger
+   mainWindow.webContents.openDevTools();
+   mainWindow.webContents.loadURL(`file://${__dirname}/index.html`).then(r => {console.log('html loaded:', r)}).catch(r => {console.log('get error', r)});
 });
