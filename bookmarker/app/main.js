@@ -12,7 +12,7 @@ app.on('ready', () => {
          nodeIntegration: true,
       }
    });
-   // debugger
-   mainWindow.webContents.openDevTools();
+   // debugger, 或者按 ctrl+shift+i
+   // mainWindow.webContents.openDevTools();
    mainWindow.webContents.loadURL(`file://${__dirname}/index.html`).then(r => {console.log('html loaded:', r)}).catch(r => {console.log('get error', r)});
 });
