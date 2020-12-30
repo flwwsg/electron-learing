@@ -1,4 +1,5 @@
-const { app, BrowserWindow } = require('electron');
+const {app, BrowserWindow, dialog} = require('electron');
+const fs = require('fs');
 
 let mainWindow = null;
 
@@ -8,6 +9,8 @@ app.on('ready', () => {
         show: false,
         webPreferences: {
             nodeIntegration: true,
+            // 版本10以后，默认关闭
+            enableRemoteModule: true,
         }
     });
 
@@ -21,3 +24,29 @@ app.on('ready', () => {
         mainWindow = null;
     });
 })
+
+
+const getFileFromUser = exports.getFileFromUser = () => {
+    dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile'],
+        filters: [
+            {
+                name: 'Markdown Files',
+                extensions: ['md', 'markdown']
+            },
+            {
+                name: 'Text Files',
+                extensions: ['txt']
+            },
+        ]
+    }).then(files => {
+        // console.log('files ======', files);
+        // files = {canceled: 是否取消, filePaths: 文件列表 }
+        openFile(files.filePaths[0])
+    })
+}
+
+const openFile = (file) => {
+    const content = fs.readFileSync(file).toString();
+    mainWindow.webContents.send('file-opened', file, content);
+}
