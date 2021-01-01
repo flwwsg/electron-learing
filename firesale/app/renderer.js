@@ -1,8 +1,8 @@
-const marked = require('marked');
-
 const {remote, ipcRenderer} = require('electron');
 // remote 可以从mainProcess导入函数，反之不行
 const mainProcess = remote.require('./main.js');
+const currentWindow = remote.getCurrentWindow();
+const marked = require('marked');
 
 const markdownView = document.querySelector('#markdown');
 const htmlView = document.querySelector('#html');
@@ -24,9 +24,13 @@ markdownView.addEventListener('keyup', (event) => {
     renderMarkdownToHtml(currentContent);
 });
 
+newFileButton.addEventListener('click', () => {
+    mainProcess.createWindow();
+});
+
 openFileButton.addEventListener('click', () => {
     // 调用 mainProcess 中函数
-    mainProcess.getFileFromUser();
+    mainProcess.getFileFromUser(currentWindow);
 });
 
 ipcRenderer.on('file-opened', (event, file, content) => {
