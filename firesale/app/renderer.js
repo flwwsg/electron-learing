@@ -1,4 +1,5 @@
 const {remote, ipcRenderer} = require('electron');
+const path = require('path');
 // remote 可以从mainProcess导入函数，反之不行
 const mainProcess = remote.require('./main.js');
 const currentWindow = remote.getCurrentWindow();
@@ -14,14 +15,51 @@ const saveHtmlButton = document.querySelector('#save-html');
 const showFileButton = document.querySelector('#show-file');
 const openInDefaultButton = document.querySelector('#open-in-default');
 
+let filePath = null;
+let originContent = '';
+
+// helper function
+
+// 判断文件是否更改
+const isDifferentContent = (content) => content !== markdownView.value;
+
 const renderMarkdownToHtml = (markdown) => {
     htmlView.innerHTML = marked(markdown, {sanitize: true});
-    console.log(htmlView.innerHTML);
 };
+
+const renderFile = (file, content) => {
+    filePath = file;
+    originContent = content;
+    markdownView.value = content;
+    renderMarkdownToHtml(content);
+    updateUserInterface(false);
+}
+
+// 更新窗口状态--标题是否编辑中等等
+const updateUserInterface = (isEdited) => {
+    let title = 'Fire Sale';
+
+    if (filePath) {
+        title = `${path.basename(filePath)} - ${title}`;
+    }
+    if (isEdited) {
+        title = `${title} (编辑中)`;
+    }
+
+    currentWindow.setTitle(title);
+    currentWindow.setDocumentEdited(isEdited);
+    // 支持 windows
+    currentWindow.isEdited = isEdited;
+    saveMarkdownButton.disabled = !isEdited;
+    revertButton.disabled = !isEdited;
+}
+
+// listener and event
 
 markdownView.addEventListener('keyup', (event) => {
     const currentContent = event.target.value;
     renderMarkdownToHtml(currentContent);
+    updateUserInterface(currentContent !== originContent);
 });
 
 newFileButton.addEventListener('click', () => {
@@ -33,7 +71,43 @@ openFileButton.addEventListener('click', () => {
     mainProcess.getFileFromUser(currentWindow);
 });
 
-ipcRenderer.on('file-opened', (event, file, content) => {
-    markdownView.value = content;
-    renderMarkdownToHtml(content);
+saveMarkdownButton.addEventListener('click', () => {
+    mainProcess.saveMarkdown(currentWindow, filePath, markdownView.value);
 });
+
+// 撤销编辑的内容
+revertButton.addEventListener('click', () => {
+    markdownView.value = originContent;
+    renderMarkdownToHtml(originContent);
+});
+
+saveHtmlButton.addEventListener('click', () => {
+    mainProcess.saveHtml(currentWindow, htmlView.innerHTML);
+});
+
+ipcRenderer.on('file-opened', (event, file, content) => {
+    console.debug('is windows edited', currentWindow.isEdited);
+    // 检查当前文档是否已经保存
+    if(currentWindow.isEdited && isDifferentContent(content)) {
+        // FIXME is need remote?
+        remote.dialog.showMessageBox(currentWindow, {
+            type: 'warning',
+            title: '覆盖当前未保存的文档？',
+            message: '打开新文档将丢失当前文件更改的内容。是否仍然打开？',
+            buttons: [
+                '是',
+                '否',
+            ],
+            defaultId: 0,
+            cancelId: 1
+        }).then(result => {
+            if(result.response === 0) {
+                renderFile(file, content);
+            }
+        });
+    } else {
+        renderFile(file, content);
+    }
+});
+
+// TODO file changed
