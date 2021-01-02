@@ -120,7 +120,7 @@ const openFile = (targetWindow, file) => {
     app.addRecentDocument(file);
     targetWindow.setRepresentedFilename(file);
     targetWindow.webContents.send('file-opened', file, content);
-    // TODO watching file
+    startWatchingFile(targetWindow, file);
 }
 
 // 保存 md 文件
@@ -164,4 +164,21 @@ const saveHtml = exports.saveHtml = (targetWindow, content) => {
     })
 }
 
-// TODO monitor file
+// 监听文件
+const startWatchingFile = (targetWindow, file) => {
+    stopWatchingFile(targetWindow);
+    const watcher = fs.watchFile(file, () => {
+        const content = fs.readFileSync(file).toString();
+        targetWindow.webContents.send('file-changed', file, content);
+    });
+
+    openFiles.set(targetWindow, watcher);
+}
+
+const stopWatchingFile = (targetWindow) => {
+    if (openFiles.has(targetWindow)) {
+        // 停止监听文件变化
+        openFiles.get(targetWindow).stop();
+        openFiles.delete(targetWindow);
+    }
+}

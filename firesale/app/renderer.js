@@ -1,4 +1,4 @@
-const {remote, ipcRenderer} = require('electron');
+const {remote, ipcRenderer, dialog} = require('electron');
 const path = require('path');
 // remote 可以从mainProcess导入函数，反之不行
 const mainProcess = remote.require('./main.js');
@@ -89,7 +89,7 @@ ipcRenderer.on('file-opened', (event, file, content) => {
     console.debug('is windows edited', currentWindow.isEdited);
     // 检查当前文档是否已经保存
     if(currentWindow.isEdited && isDifferentContent(content)) {
-        // FIXME is need remote?
+        // Use main process modules from the renderer process.需要在 remote 中引用 mainProcess dialog。
         remote.dialog.showMessageBox(currentWindow, {
             type: 'warning',
             title: '覆盖当前未保存的文档？',
@@ -110,4 +110,24 @@ ipcRenderer.on('file-opened', (event, file, content) => {
     }
 });
 
-// TODO file changed
+ipcRenderer.on('file-changed', (event, file, content) => {
+    if(!isDifferentContent(content)) {
+        // 文档未更新
+        return;
+    }
+    remote.dialog.showMessageBox(currentWindow, {
+        type: 'warning',
+        title: '覆盖当前未保存的文档？',
+        message: '当前文件被其它程序改动，是否重新打开？',
+        buttons: [
+            '是',
+            '否',
+        ],
+        defaultId: 0,
+        cancelId: 1,
+    }).then(result => {
+        if (result.response === 0) {
+            renderFile(file, content);
+        }
+    })
+})
