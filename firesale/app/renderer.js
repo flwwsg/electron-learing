@@ -130,4 +130,46 @@ ipcRenderer.on('file-changed', (event, file, content) => {
             renderFile(file, content);
         }
     })
-})
+});
+
+// 拖拽文件
+// 禁止浏览器默认行为
+document.addEventListener('dragstart', event => event.preventDefault());
+document.addEventListener('dragover', event => event.preventDefault());
+document.addEventListener('dragleave', event => event.preventDefault());
+document.addEventListener('drop', event => event.preventDefault());
+// TODO 检查文件类型， 现在临时处理文件类型
+// const getDraggedFile = (event) => event.dataTransfer.items[0];
+const getDraggedFile = (event) => event.dataTransfer.files[0];
+const getDroppedFile = (event) => event.dataTransfer.files[0];
+
+const fileTypeSupported = (file) => {
+    console.log('drag file:', file, path.extname(file.path));
+    return file.path && path.extname(file.path) === '.md' || ['text/plain', 'text/markdown'].includes(file.type);
+};
+
+markdownView.addEventListener('dragover', (event) => {
+    const file = getDraggedFile(event);
+    if (fileTypeSupported(file)) {
+        markdownView.classList.add('drag-over');
+    } else {
+        markdownView.classList.add('drag-error');
+    }
+});
+
+// 移除拖拽 css 类
+markdownView.addEventListener('dragleave', (event) => {
+    markdownView.classList.remove('drag-over');
+    markdownView.classList.remove('drag-error');
+});
+
+markdownView.addEventListener('drop', (event) => {
+    const file = getDroppedFile(event);
+    if(fileTypeSupported(file)) {
+        mainProcess.openFile(currentWindow, file.path);
+    } else {
+        alert('文件不支持');
+    }
+    markdownView.classList.remove('drag-over');
+    markdownView.classList.remove('drag-error');
+});

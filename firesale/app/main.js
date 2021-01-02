@@ -48,6 +48,8 @@ const createWindow = exports.createWindow = () => {
             enableRemoteModule: true,
         },
     });
+    // debug
+    newWindow.webContents.openDevTools();
     // 是否编辑, isDocumentEdited 只是macos中有效,所以添加此字段支持windows
     newWindow.isEdited = false;
     newWindow.loadURL(`file://${__dirname}/index.html`);
@@ -114,7 +116,7 @@ const getFileFromUser = exports.getFileFromUser = (targetWindow) => {
     })
 }
 
-const openFile = (targetWindow, file) => {
+const openFile = exports.openFile = (targetWindow, file) => {
     const content = fs.readFileSync(file).toString();
     // 添加最近打开文件列表
     app.addRecentDocument(file);
