@@ -4,6 +4,7 @@ const path = require('path');
 const mainProcess = remote.require('./main.js');
 const currentWindow = remote.getCurrentWindow();
 const marked = require('marked');
+const { Menu } = remote;
 
 const markdownView = document.querySelector('#markdown');
 const htmlView = document.querySelector('#html');
@@ -172,4 +173,54 @@ markdownView.addEventListener('drop', (event) => {
     }
     markdownView.classList.remove('drag-over');
     markdownView.classList.remove('drag-error');
+});
+
+// 目录菜单、右键菜单
+ipcRenderer.on('save-markdown', () => {
+    if (markdownView.value === '') {
+        alert('没有需要保存的文档');
+        return;
+    }
+    mainProcess.saveMarkdown(currentWindow, filePath, markdownView.value);
+});
+
+ipcRenderer.on('save-html', () => {
+    if (htmlView.innerHTML === '') {
+        alert('没有需要保存的文档');
+        return;
+    }
+    mainProcess.saveHtml(currentWindow, htmlView.innerHTML);
+});
+
+const markdownContextMenu = Menu.buildFromTemplate([
+    {
+        label: 'Open FIle',
+        click() {
+            mainProcess.getFileFromUser(currentWindow);
+        }
+    },
+    {
+        type: 'separator'
+    },
+    {
+        label: 'Cut',
+        role: 'cut',
+    },
+    {
+        label: 'Copy',
+        role: 'copy',
+    },
+    {
+        label: 'Paste',
+        role: 'paste',
+    },
+    {
+        label: 'Select All',
+        role: 'selectAll'
+    }
+]);
+
+markdownView.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    markdownContextMenu.popup();
 });

@@ -1,5 +1,7 @@
-const {app, BrowserWindow, dialog} = require('electron');
+const {app, BrowserWindow, dialog, Menu} = require('electron');
 const fs = require('fs');
+const applicationMenu = require('./application-menu');
+
 
 // 所有窗口
 const windows = new Set();
@@ -8,6 +10,7 @@ const windows = new Set();
 const openFiles = new Map();
 
 app.on('ready', () => {
+    Menu.setApplicationMenu(applicationMenu);
     createWindow();
 });
 
@@ -16,7 +19,7 @@ app.on('window-all-closed', () => {
         return false;
     }
     // 其它情况退出
-    process.exit(0);
+    app.quit();
 
 });
 
