@@ -1,4 +1,4 @@
-const {remote, ipcRenderer, dialog} = require('electron');
+const {remote, ipcRenderer, shell} = require('electron');
 const path = require('path');
 // remote 可以从mainProcess导入函数，反之不行
 const mainProcess = remote.require('./main.js');
@@ -32,6 +32,9 @@ const renderFile = (file, content) => {
     filePath = file;
     originContent = content;
     markdownView.value = content;
+    showFileButton.disabled = false;
+    openInDefaultButton.disabled = false;
+
     renderMarkdownToHtml(content);
     updateUserInterface(false);
 }
@@ -85,6 +88,26 @@ revertButton.addEventListener('click', () => {
 saveHtmlButton.addEventListener('click', () => {
     mainProcess.saveHtml(currentWindow, htmlView.innerHTML);
 });
+
+// 打开文件
+const showFile = () => {
+    if(!filePath) {
+        return alert('当前文件未保存在系统中');
+    }
+    shell.showItemInFolder(filePath);
+}
+
+// 使用默认程序打开
+const openInDefaultApplication = () => {
+    if(!filePath) {
+        return alert('当前文件未保存在系统中');
+    }
+    shell.openPath(filePath).then(r => console.log(`open ${filePath} success`, r)).catch(e => console.log(`open ${filePath} fail`, e));
+}
+showFileButton.addEventListener('click', showFile);
+openInDefaultButton.addEventListener('click', openInDefaultApplication);
+ipcRenderer.on('show-file', showFile);
+ipcRenderer.on('open-in-default', openInDefaultApplication);
 
 ipcRenderer.on('file-opened', (event, file, content) => {
     console.debug('is windows edited', currentWindow.isEdited);
